@@ -1,0 +1,193 @@
+---
+title: "Hepatit Olan Hastalarda Ölüm İçin Risk Faktörleri"
+author: 
+  - İlayda Çiçek[^1]
+bibliography: ../bibliography/biblio.bib
+csl: ../csl/apa-tr.csl
+header-includes:
+
+  - \usepackage{booktabs}
+  - \usepackage{caption} 
+  - \captionsetup[table]{skip=10pt}
+output:
+  bookdown::pdf_document2:
+    fig_caption: yes
+    fig_height: 3
+    fig_width: 4
+    keep_tex: no
+    latex_engine: xelatex
+    number_sections: yes
+    toc: no
+geometry: margin=1in
+link-citations: yes
+urlcolor: blue
+fontsize: 12pt
+biblio-style: apalike
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE, echo = TRUE, message = FALSE, warning = FALSE)
+library(dplyr)
+library(ggplot2)
+library(gtsummary)
+library(kableExtra)
+library(knitr)
+library(summarytools)
+```
+
+<!-- ======================================================================= -->
+<!-- ============================== NOTLAR ================================= -->
+<!-- ======================================================================= -->
+[^1]: 21080201, [Github Repo](https://github.com/ilaydaacicek/final)
+
+# Giriş
+
+Hepatit, karaciğerdeki normal dokunun akut olarak hasarlandığı ve işlevinin bozulduğu bir durumdur. Siroz, alkol kullanımı, hepatit B veya C enfeksiyonu, yağlı karaciğer hastalığı, otoimmün hastalıklar ve diğer nedenlerden kaynaklanabilir.
+
+Hepatitin erken evrelerinde belirtileri olmayabilir, ancak hastalık ilerledikçe yorgunluk, Bulantı ve kusma, karın ağrısı ve şişlik ve kilo kaybı gibi bulgular gösterebilir. Belirgin bir tedavisi olmaması ve altta yatan nedenini tedavi edilmesi hasta yaşamını uzatır.  Hastanın ciddiyeti ve ölüm riskini düşündüren bulgular olarak yükse karaciğer enzimleri, yüksek bilirubin seviyesi, düşük albumin seviyesi, yüksek amonyak seviyes, ve düşük protrombin zamanı gib laboratuvar bulguları vardır. Ayrıca varislerinin olması, karaciğeri büyümesi de hastalığın ciddiyetini gösterir.  Laboratuvar bulgularındaki deişikliklerin erken tanınmasıyla hastalığın şiddeti değerlendirilip önceden önlem alabilmek mümkündür.
+
+## Çalışmanın Amacı
+
+Klinik ve laboratuvar bulguları verilen hepatit hastalarında ölümü öngörecek bağımsız değişkenler incelenmek istendi.  Veriseti, Makine Öğrenmesi Sitesi'nde bulunan Hepatit Veriseti kullanıldı (hepatitis).  Veriseti 155 gözlem sayısı ve biri bağımlı değişken (yaşar/ölür) ve 19 bağımsız değişken olarak toplamda 20 depişken mevcuttu. azaltıldığı için sayısı azaltıldı.     
+
+## Literatür 
+
+Hepatit olan hastalarda kötü gidişatı ve ölümü gösteren risk faktörlerini araştıran çalışmalar tıp liteartüründe bulunmaktadır.  Hindistan'da yapılan bir çalışmada hepatit olan hastaların %44.6'sının öldüğü ve böbrek yetmezliği, iyon bozukluğu olan hastalarda ölüm oranının daha yüksek olduğu görülmüştür.  Başka bir çalışmada ise hepatit virusu taşıyan kişilerde ölüm riskinin daha fazla bulunmuştur (chen2010carriers).  Alkole bağlı hepatit hastalarında ise yüksk bilirubin seviyesi, düşük kan seviyelerinin ölüm oranını arttırdığına dair bulgular da saptanmıştır (lourens2017acute). 
+
+# Veriseti
+
+Veriseti olarak hepatit gelişmesi sonucu ölüm tahmininde bulunmayı amaçlayan ve açık erişime sahip veriseti kullanılacaktır.  Verisetinde 155 gözlem ve 20 değişken bulunmaktadır.  Toplamda 167 değerde eksiklik görüldüğü için en fazla eksik olan değişken çıkarılıp ardından eksik gözlemler çıkarılarak yeni veriseti elde edildi.  En son elde edilen verisetinde 112 gözlem ve 19 değişken mevcuttu.
+
+```{r,echo=FALSE, results=FALSE}
+veri <- read.csv("c:/users/user/Desktop/hepatitis.csv",na.strings = "?")
+sum(is.na(veri))
+str(veri)
+veri$class <- ifelse(veri$class==1,1,0)
+
+veri$steroid <- ifelse(veri$steroid==1,0,1)
+veri$fatigue <- ifelse(veri$fatigue=="1",0,1)
+veri$malaise <- ifelse(veri$malaise=="1",0,1)
+veri$anorexia <- ifelse(veri$anorexia=="1",0,1)
+veri$big_liver <- ifelse(veri$big_liver=="1",0,1)
+veri$firm_liver <- ifelse(veri$firm_liver=="1",0,1)
+veri$spleen_palpable <- ifelse(veri$spleen_palpable=="1",0,1)
+veri$spider <- ifelse(veri$spider=="1",0,1)
+veri$ascites <- ifelse(veri$ascites=="1",0,1)
+veri$varices <- ifelse(veri$varices=="1",0,1)
+veri$big_liver <- as.numeric(veri$big_liver)
+veri$alk_phosphate <- as.numeric(veri$alk_phosphate)
+veri$albumin <- as.numeric(veri$albumin)
+veri$protime <- as.numeric(veri$protime)
+
+summary(veri)
+veri <- veri %>% select(-c("protime"))
+veri <- na.omit(veri)
+
+veri$class <- factor(veri$class)
+veri$sex <- factor(veri$sex)
+veri$steroid <- factor(veri$steroid)
+veri$antiviral <- factor(veri$antiviral)
+veri$fatigue <- factor(veri$fatigue)
+veri$ascites <- factor(veri$ascites)
+veri$malaise <- factor(veri$malaise)
+veri$anorexia <- factor(veri$anorexia)
+veri$big_liver <- factor(veri$big_liver)
+veri$firm_liver <- factor(veri$firm_liver)
+veri$spleen_palpable <- factor(veri$spleen_palpable)
+veri$spider <- factor(veri$spider)
+veri$varices <- factor(veri$varices)
+veri$histology <- factor(veri$histology)
+```
+
+```{r,echo=FALSE,results=FALSE}
+numeric <- veri %>% select(c("age","bilirubin","alk_phosphate","sgot","albumin"))
+categoric <- veri %>% select(-c("age","bilirubin","alk_phosphate","sgot","albumin"))
+```
+
+Bağımsız sayısal değişkenler şunlardır:
+
+Hastanın yaşı (age), bilirubin seviyesi (bilirubin), alkalen fosfataz seviyesi (alp_phosphate), SGOT seviyesi (SGOT), albumin seviyesi (albumin).  Tablo 1'de bu sayısal değişkenlerin özet istatistikleri sunulmuştur.
+
+```{r,echo=FALSE,results=TRUE}
+numerik_t <- numeric %>% descr(transpose=TRUE,stats=c("mean","sd","med","min","max"))
+tablobir <-kable(numerik_t,col.names=c("Ortalama","Standard Deviasyon","Ortanca","Min","Maks"),caption="Sayısal Verilerin Özet İstatistikleri",escape=TRUE)
+kable_styling(tablobir,latex_options = "HOLD_position")
+```
+
+Sayısal değişkenlerin boxplot grafikleri:
+
+```{r,echo=FALSE,results=TRUE,fig.width=3,fig.height=3}
+ggplot(numeric)+geom_boxplot(aes(x=age))+labs(title="Yaş",x="")
+ggplot(numeric)+geom_boxplot(aes(x=bilirubin))+labs(title="Bilirubin",x="")
+ggplot(numeric)+geom_boxplot(aes(x=alk_phosphate))+labs(title="Alkalen Fosfataz",x="")
+ggplot(numeric)+geom_boxplot(aes(x=sgot))+labs(title="SGOT",x="")
+ggplot(numeric)+geom_boxplot(aes(x=albumin))+labs(title="Albumin",x="")
+```
+
+Katgorik değişkenler ise şunlardır:
+
+Bağımlı değişken olan sınıf (class), cinsiyet (sex), steroid kullanımı (steroid), antiviral kullanımı (antiviral), yorgunluk (fatigue), halsizlik (malaise), iştahsızlık (anorexia), karaciğer büyümesi (big_liver), hassas karaciğer (firm_liver), dalak muayensinde ele gelmesi (spleen_palpable), deride spider anjiom bulgusu (spider), assit (ascites), varis (varices) ve histoloji bulgusu (hystology).
+
+```{r,echo=FALSE}
+kategorik_t <- tbl_summary(categoric)
+kategorik_t_ <- knitr::kable(kategorik_t,col.names=c("Değişken","Sayı ve Yüzde"),caption="Kategorik Verilerin Özet İstatistikleri")
+kable_styling(kategorik_t_,latex_options = "HOLD_position")
+```
+
+Kategorik değişkenlerin barplot grafikleri:
+
+```{r,echo=FALSE,results=TRUE,fig.width=3,fig.height=3}
+ggplot(categoric)+geom_bar(aes(x=class))+labs(title="Sınıf",x="")
+ggplot(categoric)+geom_bar(aes(x=sex))+labs(title="Cinsiyet",x="")
+ggplot(categoric)+geom_bar(aes(x=steroid))+labs(title="Steroid Kullanımı",x="")
+ggplot(categoric)+geom_bar(aes(x=antiviral))+labs(title="Antiviral kullanımı",x="")
+ggplot(categoric)+geom_bar(aes(x=fatigue))+labs(title="Yorgunluk",x="")
+ggplot(categoric)+geom_bar(aes(x=malaise))+labs(title="Halsizlik",x="")
+ggplot(categoric)+geom_bar(aes(x=anorexia))+labs(title="İştahsızlık",x="")
+ggplot(categoric)+geom_bar(aes(x=big_liver))+labs(title="Karaciğer Büyümesi",x="")
+ggplot(categoric)+geom_bar(aes(x=firm_liver))+labs(title="Hassas Karaciğer",x="")
+ggplot(categoric)+geom_bar(aes(x=spleen_palpable))+labs(title="Dalağın Ele Gelmesi",x="")
+ggplot(categoric)+geom_bar(aes(x=spider))+labs(title="Deride Spider Bulgusu",x="")
+ggplot(categoric)+geom_bar(aes(x=ascites))+labs(title="Assit",x="")
+ggplot(categoric)+geom_bar(aes(x=varices))+labs(title="Varis",x="")
+ggplot(categoric)+geom_bar(aes(x=histology))+labs(title="Histoloji Bulgusu",x="")
+```
+
+# Yöntem ve Veri Analizi
+
+Karaciğer ahstalığında ölümü tahmin etmek için verisetinde logistik regresyon metodu kullanıldı. Ölümü tahmin etmede anlamlı bağımsız değişkenlerin iştahsızlık (anorexia) ve deride spider nulgusu (spider) olduğu görülmüştür.  
+
+```{r,echo=FALSE,results=FALSE,warning=FALSE}
+logreg <- glm(class~.,data=veri,family="binomial")
+summary(logreg)
+```
+
+Logistik lineer regresyon modeli ise şu şekilde bulundu:
+
+$$
+Pr(Ölüm=1|X)=\frac{exp(\beta_{0}+\beta_{1}{anorexia}+\beta_{2}{spider}
+)}{1+{exp(\beta_{0}+\beta_{1}{anorexia}+\beta_{2}{spider})}}
+$$ 
+
+```{r,ech=FALSE,results=FALSE}
+exp(coef(logreg))
+```
+
+Anlamlı bağımsız değişkenler incelendiğinde hastada iştahsızlık olması, olmayanlara göre ölüm olasılığını yaklaşık 1.82 kat arttırırken, deride spider anjiom olması ölüm olasılığını yaklaşık 20.2 kat azaltmaktadır.
+
+# Tartışma 
+
+Karaciğer hastalığı olnalarda iştahsızlık olması, diğer tüm bulgulardan daha değerlidir ve ölüm için artmış riski göstermektedir.
+
+\newpage
+# Kaynakça {#references}
+
+Hepatitis Data Set. web sayfası: https://archive.ics.uci.edu/ml/datasets/Hepatitis. Erişim tarihi: 12.04.2023
+
+Radha Krishna, Y., Saraswat, V. A., Das, K., Himanshu, G., Yachha, S. K., Aggarwal, R., & Choudhuri, G. (2009). Clinical features and predictors of outcome in acute hepatitis A and hepatitis E virus hepatitis on cirrhosis. Liver International, 29(3), 392-398.
+
+Chen, J. D., Yang, H. I., Iloeje, U. H., You, S. L., Lu, S. N., Wang, L. Y., ... & Chen, C. J. (2010). Carriers of inactive hepatitis B virus are still at risk for hepatocellular carcinoma and liver-related death. Gastroenterology, 138(5), 1747-1754.
+
+Lourens, S., Sunjaya, D. B., Singal, A., Liangpunsakul, S., Puri, P., Sanyal, A., ... & Orosz, A. (2017). Acute alcoholic hepatitis: natural history and predictors of mortality using a multicenter prospective study. Mayo Clinic Proceedings: Innovations, Quality & Outcomes, 1(1), 37-48.
+
+<div id="refs"></div>
+
